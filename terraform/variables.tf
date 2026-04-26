@@ -28,6 +28,12 @@ variable "github_repo" {
   default     = "https://github.com/saademad200/Assignment1.git"
 }
 
+variable "system_prompt" {
+  description = "System prompt passed to the LLM via the backend .env on EC2"
+  type        = string
+  default     = "You are an expert DevOps engineer who explains concepts clearly and concisely."
+}
+
 variable "backend_api_url" {
   description = "Override the backend URL used by Lambda. Defaults to the EC2 public IP resolved by Terraform."
   type        = string

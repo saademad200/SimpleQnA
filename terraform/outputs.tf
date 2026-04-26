@@ -28,6 +28,11 @@ output "backend_url" {
   value       = "http://${aws_instance.backend.public_ip}:8000"
 }
 
+output "ssh_command" {
+  description = "SSH into the EC2 instance"
+  value       = "ssh -i terraform/simpleqna.pem ubuntu@${aws_instance.backend.public_ip}"
+}
+
 output "upload_instructions" {
   description = "How to trigger the pipeline"
   value       = "Upload a .txt file to s3://${aws_s3_bucket.ai_processing.bucket}/input/<filename>.txt"

@@ -1,0 +1,2 @@
+What is Kubernetes and how does it handle container orchestration?
+Include an explanation of pods, services, and deployments.
