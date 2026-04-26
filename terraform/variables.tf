@@ -25,7 +25,7 @@ variable "llm_api_key" {
 variable "github_repo" {
   description = "Public GitHub repo URL that EC2 will clone on startup"
   type        = string
-  default     = "https://github.com/saademad200/Assignment1.git"
+  default     = "https://github.com/saademad200/SimpleQnA.git"
 }
 
 variable "system_prompt" {
