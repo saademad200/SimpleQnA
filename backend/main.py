@@ -72,6 +72,37 @@ async def get_prompt(prompt_id: int):
         raise HTTPException(status_code=404, detail="Prompt not found")
     return {"id": result["id"], "prompt_text": result["prompt_text"]}
 
+class TextPromptRequest(BaseModel):
+    prompt_text: str
+
+async def _call_llm(prompt_text: str) -> str:
+    headers = {
+        "Authorization": f"Bearer {settings.LLM_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": settings.LLM_MODEL,
+        "messages": [
+            {"role": "system", "content": settings.SYSTEM_PROMPT},
+            {"role": "user", "content": prompt_text}
+        ]
+    }
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(settings.LLM_API_URL, json=payload, headers=headers, timeout=30.0)
+            response.raise_for_status()
+            data = response.json()
+            return data["choices"][0]["message"]["content"]
+        except httpx.HTTPStatusError as e:
+            raise HTTPException(status_code=e.response.status_code, detail=f"LLM API Error: {e.response.text}")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+@app.post("/process-text", response_model=LLMResponse)
+async def process_text(request: TextPromptRequest):
+    llm_content = await _call_llm(request.prompt_text)
+    return {"response": llm_content}
+
 @app.post("/process/{prompt_id}", response_model=LLMResponse)
 async def process_prompt(prompt_id: int):
     # 1. Fetch prompt from DB
@@ -83,28 +114,6 @@ async def process_prompt(prompt_id: int):
     
     prompt_text = result["prompt_text"]
     
-    # 2. Call LLM API (Groq)
-    headers = {
-        "Authorization": f"Bearer {settings.LLM_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    
-    payload = {
-        "model": settings.LLM_MODEL,
-        "messages": [
-            {"role": "system", "content": settings.SYSTEM_PROMPT},
-            {"role": "user", "content": prompt_text}
-        ]
-    }
-    
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.post(settings.LLM_API_URL, json=payload, headers=headers, timeout=30.0)
-            response.raise_for_status()
-            data = response.json()
-            llm_content = data["choices"][0]["message"]["content"]
-            return {"response": llm_content}
-        except httpx.HTTPStatusError as e:
-            raise HTTPException(status_code=e.response.status_code, detail=f"LLM API Error: {e.response.text}")
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+    # 2. Call LLM API
+    llm_content = await _call_llm(prompt_text)
+    return {"response": llm_content}
